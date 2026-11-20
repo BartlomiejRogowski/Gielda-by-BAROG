@@ -1,0 +1,8 @@
+# zbudowana strona (powstaje w automacie GitHub)
+_site/
+# pliki robocze narzędzi i podgląd propozycji wyglądu
+.impeccable/
+.taste-skill/
+.claude/
+propozycje/
+node_modules/
