@@ -1842,7 +1842,7 @@ ${(() => { const a = athInfo(s), CS = cycleStats(s, A.th || CYCLE_TH[s.cls] || 0
         <label class="field">Historia: wejścia w dni<select id="mc-filter"><option value="all">każdy dzień</option>${Object.entries(RULES).map(([k, r]) => `<option value="${k}"${k === M.filter ? ' selected' : ''}>gdy pasuje: ${esc(r.n)}</option>`).join('')}</select></label>
         <label class="field">Ziarno losowania<input type="number" id="mc-seed" value="${M.seed}" step="1" min="1"></label>
       </div>
-      <div class="row"><button class="btn primary" data-act="mc-run">Uruchom 10 000 powtórek</button><span class="faint" id="mc-note"></span></div>
+      <div class="row"><button class="btn primary" data-act="mc-run">Losuj nowe 10 000 powtórek</button><span class="faint" style="flex:1 1 280px">Wynik liczy się sam po każdej zmianie pól. Ten przycisk losuje nowy zestaw przyszłości (nowe ziarno) i porównuje go z poprzednim, żeby pokazać, ile w wyniku jest przypadku.</span></div>
     </div>
     <div id="mc-out"></div>`;
     const rerun = () => { runMc(); };
@@ -2500,7 +2500,20 @@ Zadanie: wskaż jeden mocny punkt i jedną rzecz do poprawy w dyscyplinie (plan,
       if (S.active) { location.hash = '#trening'; return; }
       trainStart(el.dataset.sym);
     },
-    'mc-run': () => runMc(),
+    'mc-run': () => {
+      const M = UI.mc, prev = UI.mcRes;
+      M.seed = (M.seed % 9999) + 1;
+      const inp = document.getElementById('mc-seed'); if (inp) inp.value = M.seed;
+      ANIM_KEYS.delete('fan'); ANIM_KEYS.delete('hist');
+      runMc();
+      const r = UI.mcRes, out = document.getElementById('mc-out');
+      if (!out || !r || r === prev) return;
+      const d = (a, b) => `${fmtPu(a)} <span class="faint">(poprzednio ${fmtPu(b)})</span>`;
+      out.insertAdjacentHTML('afterbegin', note('info', prev
+        ? `<b>Nowe losowanie, ziarno ${M.seed}.</b> Cel pierwszy ${d(r.tgt, prev.tgt)}, stop pierwszy ${d(r.stp, prev.stp)}, średnie R ${fmtN(r.avgR, 3)} <span class="faint">(poprzednio ${fmtN(prev.avgR, 3)})</span>. Różnice rzędu 1 punktu procentowego to zwykły szum losowania, a nie zmiana szans. Jeśli werdykt zmienia się między losowaniami, plan jest na granicy.`
+        : `<b>Nowe losowanie, ziarno ${M.seed}.</b> Każde kliknięcie losuje kolejne 10 000 przyszłości.`));
+      out.scrollIntoView({ behavior: motionOK() ? 'smooth' : 'auto', block: 'start' });
+    },
     'mc-to-plan': () => { const M = UI.mc; Object.assign(UI.plan, { sym: M.sym, entry: M.entry, stopRule: M.stopRule, stopVal: M.stopVal, R: M.R }); location.hash = '#plan'; },
     'plan-mc': () => { const P = UI.plan; Object.assign(UI.mc, { mode: 'trade', sym: P.sym, entry: P.entry, stopRule: P.stopRule, stopVal: P.stopVal, R: P.R }); location.hash = '#prognoza'; },
     'plan-save': () => {
